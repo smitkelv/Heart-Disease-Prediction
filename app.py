@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
-import joblib
+import cloudpickle
 
-# Load the full pipeline
-model = joblib.load("heart_pipeline3.pkl")  
+# Load the pipeline with cloudpickle
+with open("heart_pipeline.pkl", "rb") as f:
+    model = cloudpickle.load(f)
 
-st.title("❤️ Heart Disease Prediction")
+st.title("Heart Disease Prediction")
 st.write("Enter patient information:")
 
 # -----------------------
@@ -28,7 +29,7 @@ stslope = st.selectbox("ST Slope", ["Up", "Flat", "Down"])
 # -----------------------
 if st.button("Predict"):
 
-    # Build DataFrame exactly matching training columns
+    # Build DataFrame matching training columns
     input_data = pd.DataFrame([{
         "Age": age,
         "Sex": sex,
@@ -43,7 +44,7 @@ if st.button("Predict"):
         "ST_Slope": stslope
     }])
 
-    # Predict using the pipeline
+    # Use pipeline to predict
     prediction = model.predict(input_data)[0]
     probability = model.predict_proba(input_data)[0][1]
 
@@ -52,4 +53,5 @@ if st.button("Predict"):
         st.error("⚠️ High Risk of Heart Disease")
     else:
         st.success("✅ Low Risk of Heart Disease")
+
 
