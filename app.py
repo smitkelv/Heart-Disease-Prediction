@@ -14,7 +14,7 @@ st.write("Enter patient information to predict risk of heart disease.")
 @st.cache_resource  # caches the trained pipeline across app sessions
 def load_and_train_pipeline():
     # Load CSV (uploaded to repo)
-    df = pd.read_excel("heart.xls")
+    df = pd.read_csv("heart.csv")
     X = df.drop("HeartDisease", axis=1)
     y = df["HeartDisease"]
 
@@ -84,6 +84,7 @@ if st.button("Predict"):
         st.error("⚠️ High Risk of Heart Disease")
     else:
         st.success("✅ Low Risk of Heart Disease")
+
 
 
 
