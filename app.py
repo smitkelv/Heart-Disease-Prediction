@@ -1,13 +1,42 @@
 import streamlit as st
 import pandas as pd
-import cloudpickle
-
-# Load the pipeline with cloudpickle
-with open("heart_pipeline.pkl", "rb") as f:
-    model = cloudpickle.load(f)
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import GradientBoostingClassifier
 
 st.title("Heart Disease Prediction")
-st.write("Enter patient information:")
+st.write("Enter patient information to predict risk of heart disease.")
+
+# -----------------------
+# Load data inside Streamlit
+# -----------------------
+# Upload your CSV to the repo and use the filename here
+df = pd.read_csv("heart.csv")  
+
+X = df.drop("HeartDisease", axis=1)
+y = df["HeartDisease"]
+
+# Identify numeric and categorical columns
+categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
+numeric_cols = X.select_dtypes(exclude=['object']).columns.tolist()
+
+# -----------------------
+# Build and train pipeline
+# -----------------------
+preprocessor = ColumnTransformer([
+    ('num', StandardScaler(), numeric_cols),
+    ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
+])
+
+pipeline = Pipeline([
+    ('preprocessor', preprocessor),
+    ('model', GradientBoostingClassifier())
+])
+
+# Train on the spot
+pipeline.fit(X, y)
+model = pipeline
 
 # -----------------------
 # User Inputs
@@ -29,7 +58,7 @@ stslope = st.selectbox("ST Slope", ["Up", "Flat", "Down"])
 # -----------------------
 if st.button("Predict"):
 
-    # Build DataFrame matching training columns
+    # Build input dataframe matching the training columns
     input_data = pd.DataFrame([{
         "Age": age,
         "Sex": sex,
@@ -44,7 +73,7 @@ if st.button("Predict"):
         "ST_Slope": stslope
     }])
 
-    # Use pipeline to predict
+    # Predict using the trained pipeline
     prediction = model.predict(input_data)[0]
     probability = model.predict_proba(input_data)[0][1]
 
@@ -53,5 +82,6 @@ if st.button("Predict"):
         st.error("⚠️ High Risk of Heart Disease")
     else:
         st.success("✅ Low Risk of Heart Disease")
+
 
 
