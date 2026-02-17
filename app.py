@@ -1,45 +1,18 @@
 import streamlit as st
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.ensemble import GradientBoostingClassifier
+import joblib  # for loading your saved model
 
-st.title("❤️ Heart Disease Prediction")
+st.title("Heart Disease Prediction")
 st.write("Enter patient information to predict risk of heart disease.")
 
 # -----------------------
-# Load and train pipeline (cached)
+# Load the trained model
 # -----------------------
-@st.cache_resource  # caches the trained pipeline across app sessions
-def load_and_train_pipeline():
-    # Load CSV (uploaded to repo)
-    df = pd.read_csv("heart.csv")
-    X = df.drop("HeartDisease", axis=1)
-    y = df["HeartDisease"]
-
-    # Identify categorical and numeric columns
-    categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
-    numeric_cols = X.select_dtypes(exclude=['object']).columns.tolist()
-
-    # Preprocessing pipeline
-    preprocessor = ColumnTransformer([
-        ('num', StandardScaler(), numeric_cols),
-        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
-    ])
-
-    # Full pipeline
-    pipeline = Pipeline([
-        ('preprocessor', preprocessor),
-        ('model', GradientBoostingClassifier())
-    ])
-
-    # Train pipeline
-    pipeline.fit(X, y)
-    return pipeline
-
-# Load pipeline (cached after first run)
-model = load_and_train_pipeline()
+try:
+    model = joblib.load("heart_model.pkl")  # your saved GradientBoostingClassifier
+except FileNotFoundError:
+    st.error("Model file 'heart_model.pkl' not found. Upload it to the repo root.")
+    st.stop()
 
 # -----------------------
 # User Inputs
@@ -60,7 +33,8 @@ stslope = st.selectbox("ST Slope", ["Up", "Flat", "Down"])
 # Predict Button
 # -----------------------
 if st.button("Predict"):
-    # Build input dataframe matching training columns
+
+    # Build DataFrame for the model
     input_data = pd.DataFrame([{
         "Age": age,
         "Sex": sex,
@@ -75,7 +49,7 @@ if st.button("Predict"):
         "ST_Slope": stslope
     }])
 
-    # Predict using the cached pipeline
+    # Predict
     prediction = model.predict(input_data)[0]
     probability = model.predict_proba(input_data)[0][1]
 
@@ -84,6 +58,7 @@ if st.button("Predict"):
         st.error("⚠️ High Risk of Heart Disease")
     else:
         st.success("✅ Low Risk of Heart Disease")
+
 
 
 
