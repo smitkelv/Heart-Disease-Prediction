@@ -5,38 +5,41 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import GradientBoostingClassifier
 
-st.title("Heart Disease Prediction")
+st.title("❤️ Heart Disease Prediction")
 st.write("Enter patient information to predict risk of heart disease.")
 
 # -----------------------
-# Load data inside Streamlit
+# Load and train pipeline (cached)
 # -----------------------
-# Upload your CSV to the repo and use the filename here
-df = pd.read_csv("heart.csv")  
+@st.cache_resource  # caches the trained pipeline across app sessions
+def load_and_train_pipeline():
+    # Load CSV (uploaded to repo)
+    df = pd.read_csv("heart.csv")
+    X = df.drop("HeartDisease", axis=1)
+    y = df["HeartDisease"]
 
-X = df.drop("HeartDisease", axis=1)
-y = df["HeartDisease"]
+    # Identify categorical and numeric columns
+    categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
+    numeric_cols = X.select_dtypes(exclude=['object']).columns.tolist()
 
-# Identify numeric and categorical columns
-categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
-numeric_cols = X.select_dtypes(exclude=['object']).columns.tolist()
+    # Preprocessing pipeline
+    preprocessor = ColumnTransformer([
+        ('num', StandardScaler(), numeric_cols),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
+    ])
 
-# -----------------------
-# Build and train pipeline
-# -----------------------
-preprocessor = ColumnTransformer([
-    ('num', StandardScaler(), numeric_cols),
-    ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
-])
+    # Full pipeline
+    pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('model', GradientBoostingClassifier())
+    ])
 
-pipeline = Pipeline([
-    ('preprocessor', preprocessor),
-    ('model', GradientBoostingClassifier())
-])
+    # Train pipeline
+    pipeline.fit(X, y)
+    return pipeline
 
-# Train on the spot
-pipeline.fit(X, y)
-model = pipeline
+# Load pipeline (cached after first run)
+model = load_and_train_pipeline()
 
 # -----------------------
 # User Inputs
@@ -57,8 +60,7 @@ stslope = st.selectbox("ST Slope", ["Up", "Flat", "Down"])
 # Predict Button
 # -----------------------
 if st.button("Predict"):
-
-    # Build input dataframe matching the training columns
+    # Build input dataframe matching training columns
     input_data = pd.DataFrame([{
         "Age": age,
         "Sex": sex,
@@ -73,7 +75,7 @@ if st.button("Predict"):
         "ST_Slope": stslope
     }])
 
-    # Predict using the trained pipeline
+    # Predict using the cached pipeline
     prediction = model.predict(input_data)[0]
     probability = model.predict_proba(input_data)[0][1]
 
