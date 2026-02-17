@@ -6,19 +6,15 @@ st.set_page_config(page_title="Heart Disease Prediction", page_icon="❤️")
 st.title("❤️ Heart Disease Prediction")
 st.write("Enter patient information to predict risk of heart disease.")
 
-# -----------------------
 # Load trained model and columns
-# -----------------------
 try:
-    model = joblib.load("heart_model.pkl")      # trained GradientBoostingClassifier
-    columns = joblib.load("columns.pkl")        # feature columns used during training
+    model = joblib.load("heart_model.pkl")      
+    columns = joblib.load("columns.pkl")        
 except FileNotFoundError:
     st.error("Model or columns file not found. Make sure heart_model.pkl and columns.pkl are in the repo.")
     st.stop()
 
-# -----------------------
 # User Inputs
-# -----------------------
 age = st.number_input("Age", 18, 100, 50)
 sex = st.selectbox("Sex", ["M", "F"])
 chestpain = st.selectbox("Chest Pain Type", ["ATA", "NAP", "ASY", "TA"])
@@ -31,9 +27,7 @@ exerciseangina = st.selectbox("Exercise Angina", ["Y", "N"])
 oldpeak = st.number_input("Oldpeak", 0.0, 6.0, 1.0)
 stslope = st.selectbox("ST Slope", ["Up", "Flat", "Down"])
 
-# -----------------------
 # Manual Encoding
-# -----------------------
 def encode_input(df):
     df = df.copy()
     # Sex encoding
@@ -59,9 +53,7 @@ def encode_input(df):
     
     return df
 
-# -----------------------
 # Predict Button
-# -----------------------
 if st.button("Predict"):
     input_data = pd.DataFrame([{
         "Age": age,
@@ -88,9 +80,10 @@ if st.button("Predict"):
 
     st.write(f"Prediction Probability: {probability*100:.2f}%")
     if prediction == 1:
-        st.error("⚠️ High Risk of Heart Disease")
+        st.error("High Risk of Heart Disease")
     else:
-        st.success("✅ Low Risk of Heart Disease")
+        st.success("Low Risk of Heart Disease")
+
 
 
 
